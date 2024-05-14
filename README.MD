@@ -31,11 +31,11 @@ aicat [root dir] [flags]
 
 2 Concatenate and transform file contents:
 
-    aicat "*.txt" --transform "sed 's/foo/bar/g'"
+    aicat -p "*.txt" --transform "sed 's/foo/bar/g'"
 
 3 Include binary (just identified as non utf8 contents) files:
 
-    aicat -b
+    aicat . -b
 
 ## license
 
