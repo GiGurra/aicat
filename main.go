@@ -13,15 +13,11 @@ import (
 )
 
 var params struct {
-	Glob      boa.Optional[string]   `descr:"Glob pattern to match files" pos:"true"`
+	Root      boa.Optional[string]   `descr:"Root directory to start from" pos:"true"`
 	FileType  boa.Required[string]   `short:"t" descr:"Type of files to search for (f for regular files)" default:"f"`
 	Binary    boa.Required[bool]     `descr:"Print binary files" default:"false"`
 	Patterns  boa.Optional[[]string] `descr:"Pattern to match file names"`
 	Transform boa.Optional[string]   `descr:"Optional shell command to transform file contents"`
-}
-
-func globPatternToFileList(pattern string) ([]string, error) {
-	return filepath.Glob(pattern)
 }
 
 func main() {
@@ -32,31 +28,29 @@ func main() {
 		Params: &params,
 		Run: func(cmd *cobra.Command, args []string) {
 
-			globPattern := func() string {
-				if params.Glob.HasValue() {
-					return *params.Glob.Value()
+			rootDir := func() string {
+				if params.Root.HasValue() {
+					return *params.Root.Value()
 				}
-				return "*"
+				return "."
 			}()
 
-			filesByGlobalPattern, err := globPatternToFileList(globPattern)
-			if err != nil {
-				panic(fmt.Errorf("error globbing pattern '%s': %w", params.Glob.Value(), err))
-			}
-
-			// iterate all files and filter based on file type and pattern
+			// walk the file tree and collect all files
 			var files []string
-			for _, file := range filesByGlobalPattern {
+			err := filepath.Walk(rootDir, func(file string, info os.FileInfo, err error) error {
+
+				slog.Info(fmt.Sprintf("Processing file: %s", file))
+
 				fileInfo, err := os.Stat(file)
 				if err != nil {
 					slog.Error(fmt.Sprintf("Error stating file: %s", file), err)
-					continue
+					return nil
 				}
 
 				switch params.FileType.Value() {
 				case "f":
 					if !fileInfo.Mode().IsRegular() || fileInfo.IsDir() {
-						continue
+						return nil
 					}
 				default:
 					panic(fmt.Errorf("unknown file type: %s", params.FileType.Value()))
@@ -71,11 +65,17 @@ func main() {
 						}
 					}
 					if !foundMatch {
-						continue
+						return nil
 					}
 				}
 
 				files = append(files, file)
+
+				return nil
+			})
+
+			if err != nil {
+				panic(fmt.Errorf("error walking the path: %s", err))
 			}
 
 			// Concatenate file contents with headers
