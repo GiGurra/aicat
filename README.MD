@@ -15,7 +15,7 @@ files using glob patterns and file type, and apply transformations using shell c
 
 ## installation
 
-To install aicat, you need to have Go installed. Then, you can build the application using:
+To install aicat, you need to have Go installed. Then, you can build and install the application using:
 
 `go install github.com/gigurra/aicat`
 
