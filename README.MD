@@ -132,6 +132,8 @@ is not intended to be used in production... Is what you could say. But it works,
 
 It's mostly bootstrapped/written by itself, together with github copilot, and some adjustments by me.
 
+Most of this readme is AI generated, and I have not read it. I'm sure it's great.
+
 ## Other notes
 
 Here are some fancy unicode characters selected by google that you might enjoy:
