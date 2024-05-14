@@ -56,4 +56,5 @@
  *.o
  *.so
 
-.idea/
+aicat
+aicat.exe
