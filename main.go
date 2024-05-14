@@ -4,18 +4,24 @@ import (
 	"fmt"
 	"github.com/GiGurra/boa/pkg/boa"
 	"github.com/spf13/cobra"
-	"io/ioutil"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"unicode/utf8"
 )
 
 var params struct {
-	RootDir      boa.Required[string] `descr:"Root directory to search for files"`
-	FileType     boa.Required[string] `descr:"Type of files to search for (f for regular files)"`
-	NamePattern  boa.Required[string] `descr:"Pattern to match file names"`
+	Pattern      boa.Optional[string] `descr:"Glob pattern to match files" pos:"true"`
+	FileType     boa.Required[string] `short:"t" descr:"Type of files to search for (f for regular files)" default:"f"`
+	Binary       boa.Required[bool]   `descr:"Print binary files" default:"false"`
+	NamePattern  boa.Optional[string] `descr:"Pattern to match file names"`
 	TransformCmd boa.Optional[string] `descr:"Optional shell command to transform file contents"`
+}
+
+func globPatternToFileList(pattern string) ([]string, error) {
+	return filepath.Glob(pattern)
 }
 
 func main() {
@@ -25,34 +31,64 @@ func main() {
 		Long:   `A CLI tool to concatenate and optionally transform file contents based on specified patterns.`,
 		Params: &params,
 		Run: func(cmd *cobra.Command, args []string) {
-			// Find files matching the pattern
-			var files []string
-			err := filepath.Walk(params.RootDir.Value(), func(path string, info os.FileInfo, err error) error {
-				if err != nil {
-					return err
+
+			globPattern := func() string {
+				if params.Pattern.HasValue() {
+					return *params.Pattern.Value()
 				}
-				if params.FileType.Value() == "f" && !info.IsDir() && matchPattern(info.Name(), params.NamePattern.Value()) {
-					files = append(files, path)
-				}
-				return nil
-			})
+				return "*"
+			}()
+
+			filesByGlobalPattern, err := globPatternToFileList(globPattern)
 			if err != nil {
-				fmt.Println("Error walking the path:", err)
-				return
+				panic(fmt.Errorf("error globbing pattern '%s': %w", params.Pattern.Value(), err))
+			}
+
+			// iterate all files and filter based on file type and pattern
+			var files []string
+			for _, file := range filesByGlobalPattern {
+				fileInfo, err := os.Stat(file)
+				if err != nil {
+					slog.Error(fmt.Sprintf("Error stating file: %s", file), err)
+					continue
+				}
+
+				switch params.FileType.Value() {
+				case "f":
+					if !fileInfo.Mode().IsRegular() || fileInfo.IsDir() {
+						continue
+					}
+				default:
+					panic(fmt.Errorf("unknown file type: %s", params.FileType.Value()))
+				}
+
+				if params.NamePattern.HasValue() {
+					if !matchPattern(filepath.Base(file), *params.NamePattern.Value()) {
+						continue
+					}
+				}
+
+				files = append(files, file)
 			}
 
 			// Concatenate file contents with headers
 			for _, file := range files {
-				content, err := ioutil.ReadFile(file)
+				content, err := os.ReadFile(file)
 				if err != nil {
 					fmt.Println("Error reading file:", file, err)
 					continue
 				}
 
-				// Print file header
+				//// Print file header
 				fmt.Printf("--- FILE: %s ---\n", file)
 
-				// Optionally transform content
+				// check if the file is valid utf8
+				if !utf8.ValidString(string(content)) && !params.Binary.Value() {
+					fmt.Printf(" - Contents not valid utf8, assumed binary, skipping\n")
+					continue
+				}
+
+				//Optionally transform content
 				if params.TransformCmd.Value() != nil {
 					transformedContent, err := runTransformCommand(*params.TransformCmd.Value(), file, string(content))
 					if err != nil {
