@@ -39,8 +39,6 @@ func main() {
 			var files []string
 			err := filepath.Walk(rootDir, func(file string, info os.FileInfo, err error) error {
 
-				slog.Info(fmt.Sprintf("Processing file: %s", file))
-
 				fileInfo, err := os.Stat(file)
 				if err != nil {
 					slog.Error(fmt.Sprintf("Error stating file: %s", file), err)
