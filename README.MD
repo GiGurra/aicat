@@ -21,7 +21,7 @@ To install aicat, you need to have Go installed. Then, you can build and install
 
 ## usage
 
-aicat [root dir] [flags]
+`aicat [root dir] [flags]`
 
 ```
 >aicat --help
@@ -41,17 +41,58 @@ Flags:
 
 ## examples
 
-1 Concatenate all .go and .mod files:
+1. Concatenate all .go and .mod files:
 
     aicat -p "*.go,*.mod"
 
-2 Concatenate and transform file contents:
+2. Concatenate and transform file contents:
 
     aicat -p "*.txt" --transform "sed 's/foo/bar/g'"
 
-3 Include binary (just identified as non utf8 contents) files:
+3. Include binary (just identified as non utf8 contents) files:
 
     aicat . -b
+
+4. Cat the relevant go source files in this repo
+```
+aicat . -p "*.go,*.mod"
+--- FILE: go.mod ---
+module github.com/gigurra/aicat
+
+go 1.22.2
+
+require (
+	github.com/GiGurra/boa v0.0.32
+	...
+
+
+
+--- FILE: main.go ---
+package main
+
+import (
+	"fmt"
+	...
+)
+
+var params struct {
+	Root      boa.Optional[string]   `descr:"Root directory to start from" pos:"true"`
+	FileType  boa.Required[string]   `short:"t" descr:"Type of files to search for (f for regular files)" default:"f"`
+	Binary    boa.Required[bool]     `descr:"Print binary files" default:"false"`
+	Patterns  boa.Optional[[]string] `descr:"Pattern to match file names"`
+	Transform boa.Optional[string]   `descr:"Optional shell command to transform file contents"`
+}
+
+func main() {
+	boa.Wrap{
+		Use:    "aicat",
+		Short:  "Concatenate and optionally transform file contents",
+		Long:   `A CLI tool to concatenate and optionally transform file contents based on specified patterns.`,
+		Params: &params,
+		Run: func(cmd *cobra.Command, args []string) {
+
+...
+```
 
 ## license
 
