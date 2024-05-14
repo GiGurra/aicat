@@ -6,13 +6,13 @@ files using patterns and file type, and apply transformations using shell comman
 
 ## features
 
- - Match files using patterns. 
- - Filter files by type (e.g., regular files). 
- - Optionally apply patterns to match specific file names. 
- - Concatenate file contents. 
- - Optionally transform file contents using shell commands. (untested/planned)
- - Handle binary files with an optional flag.
- - Store and re-use templates for parameters, for example, to store a set of patterns.
+- Match files using patterns.
+- Filter files by type (e.g., regular files).
+- Optionally apply patterns to match specific file names.
+- Concatenate file contents.
+- Optionally transform file contents using shell commands. (untested/planned)
+- Handle binary files with an optional flag.
+- Store and re-use templates for parameters, for example, to store a set of patterns.
 
 ## installation
 
@@ -51,17 +51,18 @@ Flags:
 
 1. Concatenate all .go and .mod files:
 
-    aicat -p "*.go,*.mod"
+   aicat -p "*.go,*.mod"
 
 2. Concatenate and transform file contents:
 
-    aicat -p "*.txt" --transform "sed 's/foo/bar/g'"
+   aicat -p "*.txt" --transform "sed 's/foo/bar/g'"
 
 3. Include binary (just identified as non utf8 contents) files:
 
-    aicat . -b
+   aicat . -b
 
 4. Cat the relevant go source files in this repo
+
 ```
 aicat . -p "*.go,*.mod"
 --- FILE: go.mod ---
@@ -122,3 +123,21 @@ You can store your parameters in reusable templates, for example:
 Then you can use the template like this:
 
 `aicat . -t go`
+
+## Code quality
+
+Absolute garbage. This is a quick and dirty implementation to scratch an itch. It is not tested, and the code is not
+very clean. It is not recommended to use this code as an example of how to write good Go code. It is a prototype, and it
+is not intended to be used in production... Is what you could say. But it works, and it is useful. So, there's that.
+
+It's mostly bootstrapped/written by itself, together with github copilot, and some adjustments by me.
+
+## Other notes
+
+Here are some fancy unicode characters selected by google that you might enjoy:
+
+```
+(✿ ♡‿♡)ᕦ⊙෴⊙ᕤ( ͝° ͜ʖ͡°)ᕤᕙ( ͡° ͜ʖ ͡°)ᕗ└|∵|┐♪乁( ⁰͡ Ĺ̯ ⁰͡ ) ㄏ乁( . ര ʖ̯ ര . )
+ㄏ♡(ӦｖӦ｡)(ﾉ◕ヮ◕)ﾉ*.✧╮(. ❛ ᴗ ❛.)╭(ノ｀Д´)ノ彡┻━┻(┛❍ᴥ❍)┛彡┻━┻(-_- )ﾉ⌒┫ ┻ ┣ ┳
+ಠ︵ಠಠ ೧ ಠಠಿ_ಠ(´;︵;)(༎ຶ ෴ ༎ຶ)༎ຶ‿༎ຶ(＠_＠;)(^_^メ)(╭☞•́⍛•̀)╭☞´◔‿ゝ◔)━☞⊙.☉⁄(⁄ ⁄•⁄-⁄•⁄ ⁄)⁄
+```
