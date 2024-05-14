@@ -6,12 +6,12 @@ files using glob patterns and file type, and apply transformations using shell c
 
 ## features
 
-• Match files using glob patterns.
-• Filter files by type (e.g., regular files).
-• Optionally apply patterns to match specific file names.
-• Concatenate file contents.
-• Optionally transform file contents using shell commands.
-• Handle binary files with an optional flag.
+ - Match files using glob patterns. 
+ - Filter files by type (e.g., regular files). 
+ - Optionally apply patterns to match specific file names. 
+ - Concatenate file contents. 
+ - Optionally transform file contents using shell commands. 
+ - Handle binary files with an optional flag.
 
 ## installation
 
