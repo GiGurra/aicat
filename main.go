@@ -13,11 +13,11 @@ import (
 )
 
 var params struct {
-	Glob         boa.Optional[string]   `descr:"Glob pattern to match files" pos:"true"`
-	FileType     boa.Required[string]   `short:"t" descr:"Type of files to search for (f for regular files)" default:"f"`
-	Binary       boa.Required[bool]     `descr:"Print binary files" default:"false"`
-	Patterns     boa.Optional[[]string] `descr:"Pattern to match file names"`
-	TransformCmd boa.Optional[string]   `descr:"Optional shell command to transform file contents"`
+	Glob      boa.Optional[string]   `descr:"Glob pattern to match files" pos:"true"`
+	FileType  boa.Required[string]   `short:"t" descr:"Type of files to search for (f for regular files)" default:"f"`
+	Binary    boa.Required[bool]     `descr:"Print binary files" default:"false"`
+	Patterns  boa.Optional[[]string] `descr:"Pattern to match file names"`
+	Transform boa.Optional[string]   `descr:"Optional shell command to transform file contents"`
 }
 
 func globPatternToFileList(pattern string) ([]string, error) {
@@ -96,8 +96,8 @@ func main() {
 				}
 
 				//Optionally transform content
-				if params.TransformCmd.Value() != nil {
-					transformedContent, err := runTransformCommand(*params.TransformCmd.Value(), file, string(content))
+				if params.Transform.Value() != nil {
+					transformedContent, err := runTransformCommand(*params.Transform.Value(), file, string(content))
 					if err != nil {
 						fmt.Println("Error transforming file:", file, err)
 						continue
