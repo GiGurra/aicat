@@ -23,6 +23,22 @@ To install aicat, you need to have Go installed. Then, you can build and install
 
 aicat [root dir] [flags]
 
+```
+>aicat --help
+
+A CLI tool to concatenate and optionally transform file contents based on specified patterns.
+
+Usage:
+  aicat [root] [flags]
+
+Flags:
+  -t, --file-type string   Type of files to search for (f for regular files) (env: FILE_TYPE) (default "f")
+  -b, --binary             Print binary files (env: BINARY) (default false)
+  -p, --patterns strings   Pattern to match file names (env: PATTERNS)
+      --transform string   Optional shell command to transform file contents (env: TRANSFORM)
+  -h, --help               help for aicat
+```
+
 ## examples
 
 1 Concatenate all .go and .mod files:
