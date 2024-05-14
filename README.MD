@@ -10,7 +10,7 @@ files using patterns and file type, and apply transformations using shell comman
  - Filter files by type (e.g., regular files). 
  - Optionally apply patterns to match specific file names. 
  - Concatenate file contents. 
- - Optionally transform file contents using shell commands. 
+ - Optionally transform file contents using shell commands. (untested/planned)
  - Handle binary files with an optional flag.
 
 ## installation
