@@ -13,11 +13,11 @@ import (
 )
 
 var params struct {
-	Pattern      boa.Optional[string] `descr:"Glob pattern to match files" pos:"true"`
-	FileType     boa.Required[string] `short:"t" descr:"Type of files to search for (f for regular files)" default:"f"`
-	Binary       boa.Required[bool]   `descr:"Print binary files" default:"false"`
-	NamePattern  boa.Optional[string] `descr:"Pattern to match file names"`
-	TransformCmd boa.Optional[string] `descr:"Optional shell command to transform file contents"`
+	Glob         boa.Optional[string]   `descr:"Glob pattern to match files" pos:"true"`
+	FileType     boa.Required[string]   `short:"t" descr:"Type of files to search for (f for regular files)" default:"f"`
+	Binary       boa.Required[bool]     `descr:"Print binary files" default:"false"`
+	Patterns     boa.Optional[[]string] `descr:"Pattern to match file names"`
+	TransformCmd boa.Optional[string]   `descr:"Optional shell command to transform file contents"`
 }
 
 func globPatternToFileList(pattern string) ([]string, error) {
@@ -33,15 +33,15 @@ func main() {
 		Run: func(cmd *cobra.Command, args []string) {
 
 			globPattern := func() string {
-				if params.Pattern.HasValue() {
-					return *params.Pattern.Value()
+				if params.Glob.HasValue() {
+					return *params.Glob.Value()
 				}
 				return "*"
 			}()
 
 			filesByGlobalPattern, err := globPatternToFileList(globPattern)
 			if err != nil {
-				panic(fmt.Errorf("error globbing pattern '%s': %w", params.Pattern.Value(), err))
+				panic(fmt.Errorf("error globbing pattern '%s': %w", params.Glob.Value(), err))
 			}
 
 			// iterate all files and filter based on file type and pattern
@@ -62,8 +62,15 @@ func main() {
 					panic(fmt.Errorf("unknown file type: %s", params.FileType.Value()))
 				}
 
-				if params.NamePattern.HasValue() {
-					if !matchPattern(filepath.Base(file), *params.NamePattern.Value()) {
+				if params.Patterns.HasValue() {
+					foundMatch := false
+					for _, pattern := range *params.Patterns.Value() {
+						if matchPattern(filepath.Base(file), pattern) {
+							foundMatch = true
+							break
+						}
+					}
+					if !foundMatch {
 						continue
 					}
 				}
