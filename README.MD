@@ -102,3 +102,10 @@ This project is licensed under the MIT License. See the LICENSE file for details
 
 In the unexpected event that this application is used by anyone else,
 contributions are welcome! Please open an issue or submit a pull request on GitHub.
+
+## TODO
+
+Custom file matcher templates/config. Store custom configs/templates in `~/.aicat/` or similar. 
+Syntax like `aicat config store-template go -p "*.go,*.mod" -t f -b false"`, and `aicat config delete-template go`,
+then usable like `aicat . -t go`. 
+
