@@ -2,11 +2,11 @@
 
 `aicat` is a very basic application for building LLM context out of text files on disk. It is a command-line tool that
 concatenates and optionally transforms the contents of files based on specified patterns. It allows you to filter
-files using glob patterns and file type, and apply transformations using shell commands.
+files using patterns and file type, and apply transformations using shell commands.
 
 ## features
 
- - Match files using glob patterns. 
+ - Match files using patterns. 
  - Filter files by type (e.g., regular files). 
  - Optionally apply patterns to match specific file names. 
  - Concatenate file contents. 
@@ -21,7 +21,7 @@ To install aicat, you need to have Go installed. Then, you can build and install
 
 ## usage
 
-aicat [glob pattern] [flags]
+aicat [root dir] [flags]
 
 ## examples
 
