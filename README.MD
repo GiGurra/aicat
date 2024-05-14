@@ -12,6 +12,7 @@ files using patterns and file type, and apply transformations using shell comman
  - Concatenate file contents. 
  - Optionally transform file contents using shell commands. (untested/planned)
  - Handle binary files with an optional flag.
+ - Store and re-use templates for parameters, for example, to store a set of patterns.
 
 ## installation
 
@@ -30,6 +31,12 @@ A CLI tool to concatenate and optionally transform file contents based on specif
 
 Usage:
   aicat [root] [flags]
+  aicat [command]
+
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  help        Help about any command
+  template    Manage templates
 
 Flags:
   -t, --file-type string   Type of files to search for (f for regular files) (env: FILE_TYPE) (default "f")
@@ -37,6 +44,7 @@ Flags:
   -p, --patterns strings   Pattern to match file names (env: PATTERNS)
       --transform string   Optional shell command to transform file contents (env: TRANSFORM)
   -h, --help               help for aicat
+
 ```
 
 ## examples
@@ -103,9 +111,14 @@ This project is licensed under the MIT License. See the LICENSE file for details
 In the unexpected event that this application is used by anyone else,
 contributions are welcome! Please open an issue or submit a pull request on GitHub.
 
-## TODO
+## Partially documented features
 
-Custom file matcher templates/config. Store custom configs/templates in `~/.aicat/` or similar. 
-Syntax like `aicat config store-template go -p "*.go,*.mod" -t f -b false"`, and `aicat config delete-template go`,
-then usable like `aicat . -t go`. 
+### Templates
 
+You can store your parameters in reusable templates, for example:
+
+`aicat template store go -p "*.go,*.mod"`
+
+Then you can use the template like this:
+
+`aicat . -t go`

@@ -318,6 +318,18 @@ func listTemplates(_ *cobra.Command, _ []string) {
 				panic(fmt.Errorf("error reading template file: %s", err))
 			}
 
+			// format in compact json form
+			var data map[string]interface{}
+			err = json.Unmarshal(templateData, &data)
+			if err != nil {
+				panic(fmt.Errorf("error unmarshalling template file: %s", err))
+			}
+
+			templateData, err = json.Marshal(data)
+			if err != nil {
+				panic(fmt.Errorf("error marshalling template file: %s", err))
+			}
+
 			paddedName := fmt.Sprintf("%-20s", templateName)
 
 			fmt.Printf("%s %s\n", paddedName, string(templateData))
