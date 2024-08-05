@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/GiGurra/boa/pkg/boa"
+	ignore "github.com/sabhiram/go-gitignore"
 	"github.com/spf13/cobra"
 	"log/slog"
 	"os"
@@ -14,11 +15,12 @@ import (
 )
 
 type Params struct {
-	Root      boa.Optional[string]   `descr:"Root directory to start from" pos:"true"`
-	FileType  boa.Required[string]   `short:"t" descr:"Type of files to search for (f for regular files)" default:"f"`
-	Binary    boa.Required[bool]     `descr:"Print binary files" default:"false"`
-	Patterns  boa.Optional[[]string] `descr:"Pattern to match file names"`
-	Transform boa.Optional[string]   `descr:"Optional shell command to transform file contents"`
+	Root             boa.Optional[string]   `descr:"Root directory to start from" pos:"true"`
+	FileType         boa.Required[string]   `short:"t" descr:"Type of files to search for (f for regular files)" default:"f"`
+	Binary           boa.Required[bool]     `descr:"Print binary files" default:"false"`
+	Patterns         boa.Optional[[]string] `descr:"Pattern to match file names"`
+	Transform        boa.Optional[string]   `descr:"Optional shell command to transform file contents"`
+	RespectGitIgnore boa.Required[bool]     `descr:"Respect .gitignore files" default:"true"`
 }
 
 var rootParams Params
@@ -77,11 +79,32 @@ func main() {
 					}
 					return ""
 				}(),
+				RespectGitIgnore: rootParams.RespectGitIgnore.Value(),
 			}
+
+			var gitFilterFn GitFilterFn = func(file string) bool {
+				if strings.HasPrefix(file, ".git/") {
+					return false
+				}
+				return true
+			}
+			gitFilter := GitFilter{Prev: nil, Current: gitFilterFn}
 
 			// walk the file tree and collect all files
 			var files []string
 			err := filepath.Walk(rootDir, func(file string, info os.FileInfo, err error) error {
+
+				gitFilter = gitFilter.PushDir(rootDir)
+				defer func() {
+					gitFilter = gitFilter.Pop()
+				}()
+
+				// Check if file should be ignored
+				if !gitFilter.Current(file) {
+					slog.Warn(fmt.Sprintf(" - '%s' is ignored by .gitignore, skipping\n", file))
+					return nil
+				}
+
 				fileInfo, err := os.Stat(file)
 				if err != nil {
 					panic(fmt.Sprintf("error stating file: %s: %v", file, err))
@@ -124,6 +147,10 @@ func main() {
 					if storedParams.Binary != nil && !rootParams.Binary.HasValue() {
 						params.Binary = *storedParams.Binary
 					}
+
+					if storedParams.RespectGitIgnore != nil && !rootParams.RespectGitIgnore.HasValue() {
+						params.RespectGitIgnore = *storedParams.RespectGitIgnore
+					}
 				}
 
 				if params.Patterns != nil {
@@ -146,6 +173,8 @@ func main() {
 			if err != nil {
 				panic(fmt.Errorf("error walking the path: %s", err))
 			}
+
+			// TODO: Support .gitignore files in subdirs
 
 			// Concatenate file contents with headers
 			for _, file := range files {
@@ -178,6 +207,79 @@ func main() {
 			}
 		},
 	}.ToApp()
+}
+
+type GitFilter struct {
+	Prev    *GitFilter
+	Current GitFilterFn
+}
+
+type GitFilterFn func(file string) bool
+
+func (f GitFilter) Push(fB GitFilterFn) GitFilter {
+	prev := f.Current
+	Current := func(file string) bool {
+		return fB(file) && f.Current(file)
+	}
+
+	prevFilterStruct := &GitFilter{
+		Prev:    f.Prev,
+		Current: prev,
+	}
+
+	return GitFilter{Prev: prevFilterStruct, Current: Current}
+}
+
+func (f GitFilter) Pop() GitFilter {
+	if f.Prev == nil {
+		slog.Warn("Cannot pop from empty filter")
+		return f
+	}
+	return *f.Prev
+}
+
+func (f GitFilter) PushGitIgnoreFile(gitignore string) GitFilter {
+	return f.Push(gitIgnoreSrc2Filter(gitignore))
+}
+
+func gitIgnoreSrc2Filter(gitIgnoreString string) GitFilterFn {
+
+	lines := strings.Split(gitIgnoreString, "\n")
+	filter := ignore.CompileIgnoreLines(lines...)
+
+	// Create filter function
+	return func(file string) bool {
+		return !filter.MatchesPath(file)
+	}
+}
+
+var cachedFilters = map[string]GitFilterFn{}
+
+func (f GitFilter) PushDir(path string) GitFilter {
+
+	ignFpath := filepath.Join(path, ".gitignore")
+
+	cachedFilter, ok := cachedFilters[ignFpath]
+	if ok {
+		return f.Push(cachedFilter)
+	}
+
+	// Check if path/.gitignore exists
+	_, err := os.Stat(ignFpath)
+	if err != nil {
+		return f
+	}
+
+	gitIgnoreData, err := os.ReadFile(ignFpath)
+	if err != nil {
+		panic(fmt.Errorf("error reading .gitignore file: %s", err))
+	}
+
+	res := f.PushGitIgnoreFile(string(gitIgnoreData))
+
+	cachedFilters[ignFpath] = res.Current
+
+	return res
 }
 
 // matchPattern checks if a file name matches the given pattern
@@ -220,17 +322,19 @@ func getTemplateDir() string {
 }
 
 type StoredParams struct {
-	FileType  *string   `json:"fileType,omitempty"`
-	Binary    *bool     `json:"binary,omitempty"`
-	Patterns  *[]string `json:"patterns,omitempty"`
-	Transform *string   `json:"transform,omitempty"`
+	FileType         *string   `json:"fileType,omitempty"`
+	Binary           *bool     `json:"binary,omitempty"`
+	Patterns         *[]string `json:"patterns,omitempty"`
+	Transform        *string   `json:"transform,omitempty"`
+	RespectGitIgnore *bool     `json:"respectGitIgnore"`
 }
 
 type SelectedParams struct {
-	FileType  string   `json:"fileType"`
-	Binary    bool     `json:"binary"`
-	Patterns  []string `json:"patterns"`
-	Transform string   `json:"transform"`
+	FileType         string   `json:"fileType"`
+	Binary           bool     `json:"binary"`
+	Patterns         []string `json:"patterns"`
+	Transform        string   `json:"transform"`
+	RespectGitIgnore bool     `json:"respectGitIgnore"`
 }
 
 func toPtr[T any](t T) *T {
@@ -267,6 +371,7 @@ func storeTemplate(_ *cobra.Command, args []string) {
 			}
 			return nil
 		}(),
+		RespectGitIgnore: toPtr(storeParams.RespectGitIgnore.Value()),
 	}
 
 	data, err := json.MarshalIndent(template, "", "  ")
