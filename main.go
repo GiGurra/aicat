@@ -195,7 +195,9 @@ func main() {
 
 				// check if the file is valid utf8
 				if !utf8.ValidString(string(content)) && !params.Binary {
-					slog.Warn(fmt.Sprintf(" - Contents of '%s' not valid utf8, assumed binary, skipping\n", file))
+					if params.Verbose {
+						slog.Warn(fmt.Sprintf(" - Contents of '%s' not valid utf8, assumed binary, skipping\n", file))
+					}
 					continue
 				}
 
