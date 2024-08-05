@@ -21,6 +21,7 @@ type Params struct {
 	Patterns   boa.Optional[[]string] `descr:"Pattern to match file names"`
 	Transform  boa.Optional[string]   `descr:"Optional shell command to transform file contents"`
 	RespectGit boa.Required[bool]     `descr:"Respect .gitignore files & ignore .git dir" default:"true"`
+	Verbose    boa.Required[bool]     `short:"v" descr:"Verbose output" default:"false"`
 }
 
 var rootParams Params
@@ -80,6 +81,7 @@ func main() {
 					return ""
 				}(),
 				RespectGit: rootParams.RespectGit.Value(),
+				Verbose:    rootParams.Verbose.Value(),
 			}
 
 			var gitFilterFn GitFilterFn = func(file string) bool {
@@ -106,7 +108,9 @@ func main() {
 
 				// Check if file should be skipped by git
 				if !gitFilter.Current(file) {
-					slog.Warn(fmt.Sprintf(" - '%s' is skipped by .gitignore, skipping\n", file))
+					if params.Verbose {
+						slog.Warn(fmt.Sprintf(" - '%s' is skipped by .gitignore, skipping\n", file))
+					}
 					return nil
 				}
 
@@ -338,6 +342,7 @@ type SelectedParams struct {
 	Patterns   []string `json:"patterns"`
 	Transform  string   `json:"transform"`
 	RespectGit bool     `json:"respectGit"`
+	Verbose    bool     `json:"verbose"`
 }
 
 func toPtr[T any](t T) *T {
