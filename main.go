@@ -15,13 +15,14 @@ import (
 )
 
 type Params struct {
-	Root       boa.Optional[string]   `descr:"Root directory to start from" pos:"true"`
-	FileType   boa.Required[string]   `short:"t" descr:"Type of files to search for (f for regular files)" default:"f"`
-	Binary     boa.Required[bool]     `descr:"Print binary files" default:"false"`
-	Patterns   boa.Optional[[]string] `descr:"Pattern to match file names"`
-	Transform  boa.Optional[string]   `descr:"Optional shell command to transform file contents"`
-	RespectGit boa.Required[bool]     `descr:"Respect .gitignore files & ignore .git dir" default:"true"`
-	Verbose    boa.Required[bool]     `short:"v" descr:"Verbose output" default:"false"`
+	Root           boa.Optional[string]   `descr:"Root directory to start from" pos:"true"`
+	FileType       boa.Required[string]   `short:"t" descr:"Type of files to search for (f for regular files)" default:"f"`
+	Binary         boa.Required[bool]     `descr:"Print binary files" default:"false"`
+	Patterns       boa.Optional[[]string] `descr:"Pattern to match file names"`
+	IgnorePatterns boa.Optional[[]string] `descr:"Pattern to ignore file names"`
+	Transform      boa.Optional[string]   `descr:"Optional shell command to transform file contents"`
+	RespectGit     boa.Required[bool]     `descr:"Respect .gitignore files & ignore .git dir" default:"true"`
+	Verbose        boa.Required[bool]     `short:"v" descr:"Verbose output" default:"false"`
 }
 
 var rootParams Params
@@ -66,22 +67,13 @@ func main() {
 			}()
 
 			params := SelectedParams{
-				FileType: rootParams.FileType.Value(),
-				Binary:   rootParams.Binary.Value(),
-				Patterns: func() []string {
-					if rootParams.Patterns.HasValue() {
-						return *rootParams.Patterns.Value()
-					}
-					return nil
-				}(),
-				Transform: func() string {
-					if rootParams.Transform.HasValue() {
-						return *rootParams.Transform.Value()
-					}
-					return ""
-				}(),
-				RespectGit: rootParams.RespectGit.Value(),
-				Verbose:    rootParams.Verbose.Value(),
+				FileType:       rootParams.FileType.Value(),
+				Binary:         rootParams.Binary.Value(),
+				Patterns:       rootParams.Patterns.GetOrElse(nil),
+				Transform:      rootParams.Transform.GetOrElse(""),
+				RespectGit:     rootParams.RespectGit.Value(),
+				Verbose:        rootParams.Verbose.Value(),
+				IgnorePatterns: rootParams.IgnorePatterns.GetOrElse(nil),
 			}
 
 			var gitFilterFn GitFilterFn = func(file string) bool {
@@ -163,6 +155,10 @@ func main() {
 					if storedParams.RespectGit != nil && !rootParams.RespectGit.HasValue() {
 						params.RespectGit = *storedParams.RespectGit
 					}
+
+					if storedParams.IgnorePatterns != nil && !rootParams.IgnorePatterns.HasValue() {
+						params.IgnorePatterns = *storedParams.IgnorePatterns
+					}
 				}
 
 				if params.Patterns != nil {
@@ -175,6 +171,14 @@ func main() {
 					}
 					if !foundMatch {
 						return nil
+					}
+				}
+
+				if params.IgnorePatterns != nil {
+					for _, pattern := range params.IgnorePatterns {
+						if matchPattern(filepath.Base(file), pattern) {
+							return nil
+						}
 					}
 				}
 
@@ -334,20 +338,22 @@ func getTemplateDir() string {
 }
 
 type StoredParams struct {
-	FileType   *string   `json:"fileType,omitempty"`
-	Binary     *bool     `json:"binary,omitempty"`
-	Patterns   *[]string `json:"patterns,omitempty"`
-	Transform  *string   `json:"transform,omitempty"`
-	RespectGit *bool     `json:"respectGit"`
+	FileType       *string   `json:"fileType,omitempty"`
+	Binary         *bool     `json:"binary,omitempty"`
+	Patterns       *[]string `json:"patterns,omitempty"`
+	IgnorePatterns *[]string `json:"ignorePatterns,omitempty"`
+	Transform      *string   `json:"transform,omitempty"`
+	RespectGit     *bool     `json:"respectGit"`
 }
 
 type SelectedParams struct {
-	FileType   string   `json:"fileType"`
-	Binary     bool     `json:"binary"`
-	Patterns   []string `json:"patterns"`
-	Transform  string   `json:"transform"`
-	RespectGit bool     `json:"respectGit"`
-	Verbose    bool     `json:"verbose"`
+	FileType       string   `json:"fileType"`
+	Binary         bool     `json:"binary"`
+	Patterns       []string `json:"patterns"`
+	IgnorePatterns []string `json:"ignorePatterns"`
+	Transform      string   `json:"transform"`
+	RespectGit     bool     `json:"respectGit"`
+	Verbose        bool     `json:"verbose"`
 }
 
 func toPtr[T any](t T) *T {
