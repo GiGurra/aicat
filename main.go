@@ -15,12 +15,12 @@ import (
 )
 
 type Params struct {
-	Root             boa.Optional[string]   `descr:"Root directory to start from" pos:"true"`
-	FileType         boa.Required[string]   `short:"t" descr:"Type of files to search for (f for regular files)" default:"f"`
-	Binary           boa.Required[bool]     `descr:"Print binary files" default:"false"`
-	Patterns         boa.Optional[[]string] `descr:"Pattern to match file names"`
-	Transform        boa.Optional[string]   `descr:"Optional shell command to transform file contents"`
-	RespectGitIgnore boa.Required[bool]     `descr:"Respect .gitignore files" default:"true"`
+	Root       boa.Optional[string]   `descr:"Root directory to start from" pos:"true"`
+	FileType   boa.Required[string]   `short:"t" descr:"Type of files to search for (f for regular files)" default:"f"`
+	Binary     boa.Required[bool]     `descr:"Print binary files" default:"false"`
+	Patterns   boa.Optional[[]string] `descr:"Pattern to match file names"`
+	Transform  boa.Optional[string]   `descr:"Optional shell command to transform file contents"`
+	RespectGit boa.Required[bool]     `descr:"Respect .gitignore files & ignore .git dir" default:"true"`
 }
 
 var rootParams Params
@@ -79,12 +79,15 @@ func main() {
 					}
 					return ""
 				}(),
-				RespectGitIgnore: rootParams.RespectGitIgnore.Value(),
+				RespectGit: rootParams.RespectGit.Value(),
 			}
 
 			var gitFilterFn GitFilterFn = func(file string) bool {
-				if strings.HasPrefix(file, ".git/") {
-					return false
+
+				if params.RespectGit {
+					if strings.HasPrefix(file, ".git/") {
+						return false
+					}
 				}
 				return true
 			}
@@ -94,14 +97,16 @@ func main() {
 			var files []string
 			err := filepath.Walk(rootDir, func(file string, info os.FileInfo, err error) error {
 
-				gitFilter = gitFilter.PushDir(rootDir)
-				defer func() {
-					gitFilter = gitFilter.Pop()
-				}()
+				if params.RespectGit {
+					gitFilter = gitFilter.PushDir(rootDir)
+					defer func() {
+						gitFilter = gitFilter.Pop()
+					}()
+				}
 
-				// Check if file should be ignored
+				// Check if file should be skipped by git
 				if !gitFilter.Current(file) {
-					slog.Warn(fmt.Sprintf(" - '%s' is ignored by .gitignore, skipping\n", file))
+					slog.Warn(fmt.Sprintf(" - '%s' is skipped by .gitignore, skipping\n", file))
 					return nil
 				}
 
@@ -148,8 +153,8 @@ func main() {
 						params.Binary = *storedParams.Binary
 					}
 
-					if storedParams.RespectGitIgnore != nil && !rootParams.RespectGitIgnore.HasValue() {
-						params.RespectGitIgnore = *storedParams.RespectGitIgnore
+					if storedParams.RespectGit != nil && !rootParams.RespectGit.HasValue() {
+						params.RespectGit = *storedParams.RespectGit
 					}
 				}
 
@@ -173,8 +178,6 @@ func main() {
 			if err != nil {
 				panic(fmt.Errorf("error walking the path: %s", err))
 			}
-
-			// TODO: Support .gitignore files in subdirs
 
 			// Concatenate file contents with headers
 			for _, file := range files {
@@ -322,19 +325,19 @@ func getTemplateDir() string {
 }
 
 type StoredParams struct {
-	FileType         *string   `json:"fileType,omitempty"`
-	Binary           *bool     `json:"binary,omitempty"`
-	Patterns         *[]string `json:"patterns,omitempty"`
-	Transform        *string   `json:"transform,omitempty"`
-	RespectGitIgnore *bool     `json:"respectGitIgnore"`
+	FileType   *string   `json:"fileType,omitempty"`
+	Binary     *bool     `json:"binary,omitempty"`
+	Patterns   *[]string `json:"patterns,omitempty"`
+	Transform  *string   `json:"transform,omitempty"`
+	RespectGit *bool     `json:"respectGit"`
 }
 
 type SelectedParams struct {
-	FileType         string   `json:"fileType"`
-	Binary           bool     `json:"binary"`
-	Patterns         []string `json:"patterns"`
-	Transform        string   `json:"transform"`
-	RespectGitIgnore bool     `json:"respectGitIgnore"`
+	FileType   string   `json:"fileType"`
+	Binary     bool     `json:"binary"`
+	Patterns   []string `json:"patterns"`
+	Transform  string   `json:"transform"`
+	RespectGit bool     `json:"respectGit"`
 }
 
 func toPtr[T any](t T) *T {
@@ -371,7 +374,7 @@ func storeTemplate(_ *cobra.Command, args []string) {
 			}
 			return nil
 		}(),
-		RespectGitIgnore: toPtr(storeParams.RespectGitIgnore.Value()),
+		RespectGit: toPtr(storeParams.RespectGit.Value()),
 	}
 
 	data, err := json.MarshalIndent(template, "", "  ")
