@@ -100,10 +100,13 @@ func main() {
 			err := filepath.Walk(rootDir, func(file string, info os.FileInfo, err error) error {
 
 				if params.RespectGit {
-					gitFilter = gitFilter.PushDir(rootDir)
-					defer func() {
-						gitFilter = gitFilter.Pop()
-					}()
+					var added bool = false
+					gitFilter, added = gitFilter.PushDir(rootDir)
+					if added {
+						defer func() {
+							gitFilter = gitFilter.Pop()
+						}()
+					}
 				}
 
 				// Check if file should be skipped by git
@@ -264,19 +267,19 @@ func gitIgnoreSrc2Filter(gitIgnoreString string) GitFilterFn {
 
 var cachedFilters = map[string]GitFilterFn{}
 
-func (f GitFilter) PushDir(path string) GitFilter {
+func (f GitFilter) PushDir(path string) (GitFilter, bool) {
 
 	ignFpath := filepath.Join(path, ".gitignore")
 
 	cachedFilter, ok := cachedFilters[ignFpath]
 	if ok {
-		return f.Push(cachedFilter)
+		return f.Push(cachedFilter), true
 	}
 
 	// Check if path/.gitignore exists
 	_, err := os.Stat(ignFpath)
 	if err != nil {
-		return f
+		return f, false
 	}
 
 	gitIgnoreData, err := os.ReadFile(ignFpath)
@@ -288,7 +291,7 @@ func (f GitFilter) PushDir(path string) GitFilter {
 
 	cachedFilters[ignFpath] = res.Current
 
-	return res
+	return res, true
 }
 
 // matchPattern checks if a file name matches the given pattern
