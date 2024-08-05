@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 )
@@ -168,6 +169,10 @@ func main() {
 							foundMatch = true
 							break
 						}
+						if matchPattern(file, pattern) {
+							foundMatch = true
+							break
+						}
 					}
 					if !foundMatch {
 						return nil
@@ -177,6 +182,9 @@ func main() {
 				if params.IgnorePatterns != nil {
 					for _, pattern := range params.IgnorePatterns {
 						if matchPattern(filepath.Base(file), pattern) {
+							return nil
+						}
+						if matchPattern(file, pattern) {
 							return nil
 						}
 					}
@@ -298,13 +306,39 @@ func (f GitFilter) PushDir(path string) (GitFilter, bool) {
 	return res, true
 }
 
+var cachedRegexes = map[string]*regexp.Regexp{}
+
+func getRegexForPattern(pattern string) (*regexp.Regexp, error) {
+	if r, ok := cachedRegexes[pattern]; ok {
+		return r, nil
+	}
+
+	r, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, err
+	}
+
+	cachedRegexes[pattern] = r
+	return r, nil
+}
+
 // matchPattern checks if a file name matches the given pattern
 func matchPattern(name, pattern string) bool {
 	matched, err := filepath.Match(pattern, name)
 	if err != nil {
 		return false
 	}
-	return matched
+	if matched {
+		return true
+	}
+
+	// try as regex
+	compiledRegex, err := getRegexForPattern(pattern)
+	if err != nil {
+		return false
+	}
+
+	return compiledRegex.MatchString(name)
 }
 
 // runTransformCommand runs the transformation command on the file content
