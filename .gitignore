@@ -1,60 +1,60 @@
- # Binaries for programs and plugins
- *.exe
- *.exe~
- *.dll
- *.so
- *.dylib
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
 
- # Output of the go coverage tool, specifically when used with LiteIDE
- *.out
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
 
- # Go workspace file
- go.work
+# Go workspace file
+go.work
 
- # Go modules
- vendor/
+# Go modules
+vendor/
 
- # IDE/editor specific files
- .vscode/
- .idea/
- *.swp
- *.swo
- *.swn
+# IDE/editor specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
 
- # Logs
- *.log
+# Logs
+*.log
 
- # Dependency directories
- vendor/
- Godeps/
+# Dependency directories
+vendor/
+Godeps/
 
- # Go build artifacts
- *.a
- *.o
- *.so
- *.exe
- *.test
- *.prof
+# Go build artifacts
+*.a
+*.o
+*.so
+*.exe
+*.test
+*.prof
 
- # Test binary, coverage data, and other test-related files
- *.test
- *.cover
- *.prof
- *.out
- *.coverprofile
- *.cov
- *.coverage
- *.tmp
+# Test binary, coverage data, and other test-related files
+*.test
+*.cover
+*.prof
+*.out
+*.coverprofile
+*.cov
+*.coverage
+*.tmp
 
- # Go modules
- go.sum
- go.work.sum
+# Go modules
+go.sum
+go.work.sum
 
- # Go build cache
- *.cache
- *.a
- *.o
- *.so
+# Go build cache
+*.cache
+*.a
+*.o
+*.so
 
 aicat
 aicat.exe
