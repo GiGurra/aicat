@@ -90,10 +90,10 @@ func main() {
 
 			// walk the file tree and collect all files
 			var files []string
-			err := filepath.Walk(rootDir, func(file string, info os.FileInfo, err error) error {
+			err := filepath.Walk(rootDir, func(file string, info os.FileInfo, _ error) error {
 
 				if params.RespectGit {
-					var added bool = false
+					added := false
 					gitFilter, added = gitFilter.PushDir(rootDir)
 					if added {
 						defer func() {
