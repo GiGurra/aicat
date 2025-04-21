@@ -16,7 +16,7 @@
 
  # IDE/editor specific files
  .vscode/
- .idea/
+# .idea/
  *.swp
  *.swo
  *.swn
