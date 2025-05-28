@@ -30,22 +30,22 @@ var rootParams Params
 var storeParams Params
 
 func main() {
-	boa.Wrap{
+	boa.Cmd{
 		Use:    "aicat",
 		Short:  "Concatenate and optionally transform file contents",
 		Long:   `A CLI tool to concatenate and optionally transform file contents based on specified patterns.`,
 		Params: &rootParams,
-		SubCommands: []*cobra.Command{
-			boa.Wrap{
+		SubCmds: []*cobra.Command{
+			boa.Cmd{
 				Use:   "template",
 				Short: "Manage templates",
-				SubCommands: []*cobra.Command{
-					boa.Wrap{
-						Use:    "store [name]",
-						Short:  "Store a new template",
-						Params: &storeParams,
-						Run:    storeTemplate,
-					}.ToCmd(),
+				SubCmds: []*cobra.Command{
+					boa.Cmd{
+						Use:     "store [name]",
+						Short:   "Store a new template",
+						Params:  &storeParams,
+						RunFunc: storeTemplate,
+					}.ToCobra(),
 					{
 						Use:   "delete [name]",
 						Short: "Delete an existing template",
@@ -57,9 +57,9 @@ func main() {
 						Run:   listTemplates,
 					},
 				},
-			}.ToCmd(),
+			}.ToCobra(),
 		},
-		Run: func(cmd *cobra.Command, args []string) {
+		RunFunc: func(cmd *cobra.Command, args []string) {
 			rootDir := func() string {
 				if rootParams.Root.HasValue() {
 					return *rootParams.Root.Value()
@@ -230,7 +230,7 @@ func main() {
 				fmt.Println()
 			}
 		},
-	}.ToApp()
+	}.Run()
 }
 
 type GitFilter struct {

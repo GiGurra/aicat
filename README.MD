@@ -93,7 +93,7 @@ var params struct {
 }
 
 func main() {
-	boa.Wrap{
+	boa.Cmd{
 		Use:    "aicat",
 		Short:  "Concatenate and optionally transform file contents",
 		Long:   `A CLI tool to concatenate and optionally transform file contents based on specified patterns.`,
