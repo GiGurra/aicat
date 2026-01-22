@@ -3,6 +3,8 @@
 [![CI Status](https://github.com/GiGurra/aicat/actions/workflows/ci.yml/badge.svg)](https://github.com/GiGurra/aicat/actions/workflows/ci.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/GiGurra/aicat)](https://goreportcard.com/report/github.com/GiGurra/aicat)
 
+NOTE: Archiving this, as claude code/similar are now more than capable of finding their own contexts without problem.
+
 `aicat` is a very basic application for building LLM context out of text files on disk. It is a command-line tool that
 concatenates and optionally transforms the contents of files based on specified patterns. It allows you to filter
 files using patterns and file type, and apply transformations using shell commands.
